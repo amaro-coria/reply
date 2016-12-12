@@ -67,10 +67,13 @@ public class ReplyApplication {
 		}
 		ConfigurableApplicationContext ctx = SpringApplication.run(ReplyApplication.class, args);
 		ReplyBD bd = ctx.getBean(ReplyBD.class);
+		ReplyConnection cnx = ctx.getBean(ReplyConnection.class);
 		if (test) {
 			Integer count = bd.callDBUnitTest();
 			log.info("Count testing:{}", count);
 			bd.callDBParamTest();
+			boolean statusConnection = cnx.checkStatus();
+			log.info("Connection status:{}", statusConnection);
 		} else if (reply) {
 			String result = bd.callDBReply();
 			log.info("Result for BDReply: {}", result);
