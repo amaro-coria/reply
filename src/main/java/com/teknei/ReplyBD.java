@@ -69,8 +69,8 @@ public class ReplyBD {
 	 * Shows the parameters that call this function
 	 */
 	public void callDBParamTest() {
-		log.info("Linking BD with params: {} , {} , {} , {} , {} , {}", dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny,
-				pwdBDDestiny, replyTable);
+		log.info("Linking BD with params: {} , {} , {} , {} , {} , {}", dbDestiny, ipDestiny, portBDDestiny,
+				usuaBDDestiny, pwdBDDestiny, replyTable);
 	}
 
 	/**
@@ -80,24 +80,51 @@ public class ReplyBD {
 	 * @return the status output from function
 	 */
 	public String callDBReply() {
-		try {
-			log.info("Linking BD with params: {} , {} , {} , {} , {} , {}", dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny,
-					pwdBDDestiny, replyTable);
-			String sql = "select sitm_disp.repl_data(?, ?, ?, ?, ?, ?);";
-			Integer intReplyTable = 0;
-			try{
-				intReplyTable = Integer.parseInt(replyTable);
-			}catch(Exception e){
-				intReplyTable = 0;
+		String overallResult = "0";
+		log.info("Linking BD with params: {} , {} , {} , {} , {} , {}", dbDestiny, ipDestiny, portBDDestiny,
+				usuaBDDestiny, pwdBDDestiny, replyTable);
+		String[] replyModes = replyTable.split(",");
+		for (String replyMode : replyModes) {
+			try {
+				String sql = "select sitm_disp.repl_data(?, ?, ?, ?, ?, ?);";
+				Integer intReplyTable = 0;
+				try {
+					intReplyTable = Integer.parseInt(replyMode);
+				} catch (Exception e) {
+					intReplyTable = 0;
+				}
+				Object result = jdbcTemplate.queryForObject(sql, new Object[] { dbDestiny, ipDestiny, portBDDestiny,
+						usuaBDDestiny, pwdBDDestiny, intReplyTable }, Object.class);
+				log.info("#########################################");
+				log.info("Reply mode: {} , Reply partial result: {}", replyMode, result.toString());
+				String partialResult = result.toString();
+				try {
+					int partialResultInt = Integer.parseInt(partialResult);
+					if (partialResultInt == 0 && overallResult.equals("0")) {
+						overallResult = "0";
+					} else {
+						overallResult = partialResult;
+					}
+				} catch (NumberFormatException ne) {
+					log.error("No '0' result");
+					overallResult = partialResult;
+				}
+			} catch (Exception e) {
+				log.error("Error calling BD Reply: {}", e.getMessage());
+				overallResult = "1";
 			}
-			Object result = jdbcTemplate.queryForObject(sql,
-					new Object[] { dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny, pwdBDDestiny, intReplyTable}, Object.class);
-			return result.toString();
-		} catch (Exception e) {
-			log.error("Error calling BD Reply: {}", e.getMessage());
-			return "01";
 		}
 
+		System.out.println("##############################################");
+		System.out.println("   ###########  ###     ###   #####     ###");
+		System.out.println("       ###      ###   ####    ### ###   ###");
+		System.out.println("       ###      ### #####     ###  ###  ###");
+		System.out.println("       ###      ######        ###   ### ###");
+		System.out.println("       ###      ###  ####     ###    ######");
+		System.out.println("       ###      ####  ####    ###     #####");
+		System.out.println("##############################################");
+		log.info("Overall result: {}", overallResult);
+		return overallResult;
 	}
 
 }
