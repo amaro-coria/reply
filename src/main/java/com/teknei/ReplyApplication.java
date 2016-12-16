@@ -56,7 +56,7 @@ public class ReplyApplication {
 				log.info(
 						"For specify application.properties use '--spring.config.location=<FULL_CONFIG_PATH_TO_PROPERTIES>' as last command parameter");
 				log.info(
-						"Example: java -jar reply.jar -t --spring.config.location=/home/teknei/SITM/CONFIG//tkn_reply.properties");
+						"Example: java -jar reply.jar -t --spring.config.location=/home/teknei/SITM/CONFIG/tkn_reply.properties");
 				System.exit(0);
 			} else {
 				log.info(
@@ -75,8 +75,25 @@ public class ReplyApplication {
 			boolean statusConnection = cnx.checkStatus();
 			log.info("Connection status:{}", statusConnection);
 		} else if (reply) {
+			boolean statusConnection = cnx.checkStatus();
+			log.info("##############################################");
+			log.info("Connection status:{}", statusConnection);
+			if(!statusConnection){
+				log.info("No connection available, aborting reply. ");
+				log.info("Exit with code '1'");
+				System.exit(1);
+			}
+			log.info("##############################################");
 			String result = bd.callDBReply();
+			log.info("##############################################");
 			log.info("Result for BDReply: {}", result);
+			log.info("##############################################");
+			try{
+				Integer i = Integer.parseInt(result);
+				System.exit(i);
+			}catch(Exception e){
+				System.exit(1);
+			}
 		}
 	}
 

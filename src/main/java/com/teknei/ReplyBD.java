@@ -42,6 +42,8 @@ public class ReplyBD {
 	private String usuaBDDestiny;
 	@Value("${tkn.pwd.bd.destiny}")
 	private String pwdBDDestiny;
+	@Value("${tkn.reply.table}")
+	private String replyTable;
 
 	private static final Logger log = LoggerFactory.getLogger(ReplyBD.class);
 
@@ -67,8 +69,8 @@ public class ReplyBD {
 	 * Shows the parameters that call this function
 	 */
 	public void callDBParamTest() {
-		log.info("Linking BD with params: {} {} {} {} {}", dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny,
-				pwdBDDestiny);
+		log.info("Linking BD with params: {} , {} , {} , {} , {} , {}", dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny,
+				pwdBDDestiny, replyTable);
 	}
 
 	/**
@@ -79,11 +81,17 @@ public class ReplyBD {
 	 */
 	public String callDBReply() {
 		try {
-			log.info("Linking BD with params: {} {} {} {} {}", dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny,
-					pwdBDDestiny);
-			String sql = "select sitm_disp.repl_data(?, ?, ?, ?, ?);";
+			log.info("Linking BD with params: {} , {} , {} , {} , {} , {}", dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny,
+					pwdBDDestiny, replyTable);
+			String sql = "select sitm_disp.repl_data(?, ?, ?, ?, ?, ?);";
+			Integer intReplyTable = 0;
+			try{
+				intReplyTable = Integer.parseInt(replyTable);
+			}catch(Exception e){
+				intReplyTable = 0;
+			}
 			Object result = jdbcTemplate.queryForObject(sql,
-					new Object[] { dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny, pwdBDDestiny }, Object.class);
+					new Object[] { dbDestiny, ipDestiny, portBDDestiny, usuaBDDestiny, pwdBDDestiny, intReplyTable}, Object.class);
 			return result.toString();
 		} catch (Exception e) {
 			log.error("Error calling BD Reply: {}", e.getMessage());
