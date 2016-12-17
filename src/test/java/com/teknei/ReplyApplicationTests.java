@@ -61,7 +61,7 @@ public class ReplyApplicationTests {
 	 */
 	@Test
 	public void replyBD() {
-		reply.callDBReply();
+		reply.callDBReplyWithTimeout();
 	}
 
 	/**

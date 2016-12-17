@@ -3,6 +3,14 @@
  */
 package com.teknei;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +52,8 @@ public class ReplyBD {
 	private String pwdBDDestiny;
 	@Value("${tkn.reply.table}")
 	private String replyTable;
+	@Value("${tkn.timeout}")
+	private String timeOut;
 
 	private static final Logger log = LoggerFactory.getLogger(ReplyBD.class);
 
@@ -72,6 +82,40 @@ public class ReplyBD {
 		log.info("Linking BD with params: {} , {} , {} , {} , {} , {}", dbDestiny, ipDestiny, portBDDestiny,
 				usuaBDDestiny, pwdBDDestiny, replyTable);
 	}
+	
+	/**
+	 * Main function that calls data synchronization from host to host. Must
+	 * have correct properties parameters set
+	 * 
+	 * @return  the status output from function
+	 */
+	public String callDBReplyWithTimeout(){
+		log.info("Running with {} minutes in timeout", timeOut);
+		Integer iMins = 9;
+		try{
+			iMins = Integer.parseInt(timeOut);
+		}catch(Exception e){
+			log.info("Problem setting minutes in timeout, default is 9");
+			iMins = 9;
+		}
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Future<String> future = executor.submit(new Callable() {
+		    public String call() throws Exception {
+		        String bdReply = callDBReply();
+		        return bdReply;
+		    }
+		});
+		try {
+		    String result = future.get(iMins, TimeUnit.MINUTES); 
+		    return result;
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
+			future.cancel(true);
+		    log.error("Timeout reached, aborting,");
+		}
+		executor.shutdownNow();
+		return "01";
+	}
 
 	/**
 	 * Main function that calls data synchronization from host to host. Must
@@ -79,7 +123,7 @@ public class ReplyBD {
 	 * 
 	 * @return the status output from function
 	 */
-	public String callDBReply() {
+	private String callDBReply() {
 		String overallResult = "0";
 		log.info("Linking BD with params: {} , {} , {} , {} , {} , {}", dbDestiny, ipDestiny, portBDDestiny,
 				usuaBDDestiny, pwdBDDestiny, replyTable);
@@ -93,9 +137,10 @@ public class ReplyBD {
 				} catch (Exception e) {
 					intReplyTable = 0;
 				}
+				log.info("#########################################");
+				log.info("Reply request for reply mode: {}", replyMode);
 				Object result = jdbcTemplate.queryForObject(sql, new Object[] { dbDestiny, ipDestiny, portBDDestiny,
 						usuaBDDestiny, pwdBDDestiny, intReplyTable }, Object.class);
-				log.info("#########################################");
 				log.info("Reply mode: {} , Reply partial result: {}", replyMode, result.toString());
 				String partialResult = result.toString();
 				try {
