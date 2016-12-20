@@ -84,7 +84,7 @@ public class ReplyApplication {
 				System.exit(1);
 			}
 			log.info("##############################################");
-			String result = bd.callDBReplyWithTimeout();
+			String result = bd.dbReply();
 			log.info("##############################################");
 			log.info("Result for BDReply: {}", result);
 			log.info("##############################################");
