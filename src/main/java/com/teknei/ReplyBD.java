@@ -38,6 +38,11 @@ public class ReplyBD {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 	/*
+	 * Injected value
+	 */
+	@Autowired
+	private ReplyLog logReply;
+	/*
 	 * Injected properties
 	 */
 	@Value("${tkn.db.destiny.name}")
@@ -88,6 +93,7 @@ public class ReplyBD {
 
 	/**
 	 * Public method for managed db reply
+	 * 
 	 * @return the status of the transaction
 	 */
 	public String dbReply() {
@@ -151,45 +157,48 @@ public class ReplyBD {
 				usuaBDDestiny, pwdBDDestiny, replyTable);
 		String[] replyModes = replyTable.split(",");
 		for (String replyMode : replyModes) {
-			boolean repeate = false;
-			do {
+			try {
+				String sql = "select sitm_disp.repl_data(?, ?, ?, ?, ?, ?);";
+				Integer intReplyTable = 0;
 				try {
-					String sql = "select sitm_disp.repl_data(?, ?, ?, ?, ?, ?);";
-					Integer intReplyTable = 0;
-					try {
-						intReplyTable = Integer.parseInt(replyMode);
-					} catch (Exception e) {
-						intReplyTable = 0;
-					}
-					log.info("#########################################");
-					log.info("Reply request for reply mode: {}", replyMode);
-					Object result = jdbcTemplate.queryForObject(sql, new Object[] { dbDestiny, ipDestiny, portBDDestiny,
-							usuaBDDestiny, pwdBDDestiny, intReplyTable }, Object.class);
-					log.info("Reply mode: {} , Reply partial result: {}", replyMode, result.toString());
-					String partialResult = result.toString();
-					try {
-						int partialResultInt = Integer.parseInt(partialResult);
-						if (partialResultInt == 0 && overallResult.equals("0")) {
-							overallResult = "0";
-							repeate = false;
-						} else if (partialResultInt == RE_INVOKE) {
-							log.info("Partial result reached, attempting again...");
-							repeate = true;
-						} else {
-							repeate = false;
-							overallResult = partialResult;
-						}
-					} catch (NumberFormatException ne) {
-						log.error("No '0' result");
+					intReplyTable = Integer.parseInt(replyMode);
+				} catch (Exception e) {
+					intReplyTable = 0;
+				}
+				log.info("#########################################");
+				log.info("Reply request for reply mode: {}", replyMode);
+				Object result = jdbcTemplate.queryForObject(sql, new Object[] { dbDestiny, ipDestiny, portBDDestiny,
+						usuaBDDestiny, pwdBDDestiny, intReplyTable }, Object.class);
+				log.info("Reply mode: {} , Reply partial result: {}", replyMode, result.toString());
+				String partialResult = result.toString();
+				if (partialResult.contains("\\|")) {
+					String[] splitResult = partialResult.split("\\|");
+					String statisticData = splitResult[1];
+					partialResult = splitResult[0];
+					logReply.writeLog(intReplyTable, statisticData);
+				}else{
+					log.info("No statistics recognized");
+				}
+				try {
+					int partialResultInt = Integer.parseInt(partialResult);
+					if (partialResultInt == 0 && overallResult.equals("0")) {
+						overallResult = "0";
+					} else if (partialResultInt == RE_INVOKE) {
+						log.info("Partial result reached, ready to new attempt...");
+						overallResult = partialResult;
+						break;
+					} else {
 						overallResult = partialResult;
 					}
-				} catch (Exception e) {
-					log.error("Error calling BD Reply: {}", e.getMessage());
-					overallResult = "1";
+				} catch (NumberFormatException ne) {
+					log.error("No '0' or number result");
+					overallResult = partialResult;
 				}
-			} while (repeate);
+			} catch (Exception e) {
+				log.error("Error calling BD Reply: {}", e.getMessage());
+				overallResult = "1";
+			}
 		}
-
 		System.out.println("##############################################");
 		System.out.println("   ###########  ###     ###   #####     ###");
 		System.out.println("       ###      ###   ####    ### ###   ###");
